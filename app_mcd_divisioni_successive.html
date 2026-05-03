@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calcolo del MCD con divisioni successive</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --accent-soft: #dbeafe;
+      --danger: #b91c1c;
+      --success: #047857;
+      --shadow: 0 18px 40px rgba(31, 41, 55, 0.10);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #e0f2fe 0, transparent 28%), var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .app {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 780px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(209, 213, 219, 0.75);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 12px 14px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 18px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .1s, background .15s, color .15s, border .15s;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .primary:hover { background: var(--accent-dark); }
+
+    .secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .secondary:hover { background: #f9fafb; }
+
+    .hint {
+      color: var(--muted);
+      font-size: .95rem;
+      margin-top: 8px;
+    }
+
+    .error {
+      display: none;
+      margin-top: 14px;
+      color: var(--danger);
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-weight: 700;
+    }
+
+    .number-inputs {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .factor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .factor-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .factor-card h3 {
+      margin: 0 0 12px;
+      font-size: 1.2rem;
+    }
+
+    .division-wrapper {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    table.division-table {
+      border-collapse: collapse;
+      font-size: 1.25rem;
+      font-family: Georgia, "Times New Roman", serif;
+      min-width: 92px;
+    }
+
+    .division-table td {
+      padding: 2px 10px;
+      line-height: 1.2;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    .division-table td:first-child {
+      min-width: 48px;
+    }
+
+    .division-table td:nth-child(2) {
+      border-left: 3px solid #9ca3af;
+      min-width: 36px;
+      text-align: left;
+    }
+
+    .factor-expression {
+      font-size: 1.12rem;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    sup {
+      font-size: .72em;
+      line-height: 0;
+    }
+
+    .common-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #1e3a8a;
+      font-weight: 800;
+    }
+
+    .calc-box {
+      border-radius: 18px;
+      padding: 18px;
+      background: linear-gradient(135deg, #ecfdf5, #eff6ff);
+      border: 1px solid #bfdbfe;
+      margin-top: 16px;
+    }
+
+    .calc-line {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+    }
+
+    .gcd-value {
+      font-size: clamp(2rem, 6vw, 4.2rem);
+      line-height: 1;
+      margin: 8px 0 0;
+      color: var(--success);
+      letter-spacing: -0.06em;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media print {
+      body { background: white; }
+      .card { box-shadow: none; break-inside: avoid; }
+      button, .hint { display: none; }
+      .app { width: 100%; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>MCD con scomposizione in fattori primi</h1>
+      <p class="subtitle">
+        Inserisci due o più numeri naturali: l'app mostra le divisioni successive, la scomposizione in fattori primi, i fattori comuni con l'esponente minimo e il calcolo finale del MCD.
+      </p>
+    </header>
+
+    <section class="card" aria-labelledby="setup-title">
+      <h2 class="section-title" id="setup-title">1. Scegli quanti numeri vuoi usare</h2>
+      <div class="grid">
+        <div>
+          <label for="quantity">Quanti numeri?</label>
+          <input id="quantity" type="number" min="2" max="12" step="1" value="3" />
+          <div class="hint">Valore consigliato: da 2 a 12 numeri.</div>
+        </div>
+        <div>
+          <button class="primary" id="createInputsBtn">Crea campi</button>
+        </div>
+      </div>
+
+      <div id="numberInputs" class="number-inputs" aria-live="polite"></div>
+
+      <div class="button-row">
+        <button class="primary" id="calculateBtn">Calcola MCD</button>
+        <button class="secondary" id="exampleBtn">Esempio: 18, 245, 36</button>
+        <button class="secondary" id="resetBtn">Pulisci</button>
+      </div>
+
+      <div class="error" id="errorBox"></div>
+    </section>
+
+    <section class="card results" id="results" aria-live="polite">
+      <h2 class="section-title">2. Divisioni successive e fattori primi</h2>
+      <div class="factor-grid" id="factorizations"></div>
+    </section>
+
+    <section class="card results" id="commonSection" aria-live="polite">
+      <h2 class="section-title">3. Fattori comuni con esponente minimo</h2>
+      <p id="commonExplanation"></p>
+      <div class="common-list" id="commonFactors"></div>
+
+      <div class="calc-box">
+        <p class="calc-line" id="calculationLine"></p>
+        <p class="calc-line" id="finalLine"></p>
+        <div class="gcd-value" id="gcdValue"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const quantityInput = document.getElementById('quantity');
+    const createInputsBtn = document.getElementById('createInputsBtn');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const exampleBtn = document.getElementById('exampleBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const numberInputs = document.getElementById('numberInputs');
+    const errorBox = document.getElementById('errorBox');
+    const results = document.getElementById('results');
+    const commonSection = document.getElementById('commonSection');
+    const factorizations = document.getElementById('factorizations');
+    const commonExplanation = document.getElementById('commonExplanation');
+    const commonFactors = document.getElementById('commonFactors');
+    const calculationLine = document.getElementById('calculationLine');
+    const finalLine = document.getElementById('finalLine');
+    const gcdValue = document.getElementById('gcdValue');
+
+    createInputs();
+
+    createInputsBtn.addEventListener('click', createInputs);
+    calculateBtn.addEventListener('click', calculate);
+    exampleBtn.addEventListener('click', loadExample);
+    resetBtn.addEventListener('click', resetAll);
+    quantityInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') createInputs();
+    });
+
+    function createInputs() {
+      hideError();
+      hideResults();
+
+      const quantity = Number(quantityInput.value);
+      if (!Number.isInteger(quantity) || quantity < 2 || quantity > 12) {
+        showError('Inserisci una quantità intera compresa tra 2 e 12.');
+        return;
+      }
+
+      numberInputs.innerHTML = '';
+      for (let i = 1; i <= quantity; i++) {
+        const wrapper = document.createElement('div');
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+
+        label.setAttribute('for', `number-${i}`);
+        label.textContent = `Numero ${i}`;
+
+        input.type = 'number';
+        input.id = `number-${i}`;
+        input.className = 'number-field';
+        input.min = '1';
+        input.step = '1';
+        input.placeholder = 'Es. 18';
+
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') calculate();
+        });
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(input);
+        numberInputs.appendChild(wrapper);
+      }
+    }
+
+    function loadExample() {
+      quantityInput.value = 3;
+      createInputs();
+      const values = [18, 245, 36];
+      document.querySelectorAll('.number-field').forEach((input, index) => {
+        input.value = values[index];
+      });
+      calculate();
+    }
+
+    function resetAll() {
+      quantityInput.value = 3;
+      createInputs();
+      hideError();
+      hideResults();
+    }
+
+    function calculate() {
+      hideError();
+
+      const fields = [...document.querySelectorAll('.number-field')];
+      if (fields.length === 0) {
+        showError('Prima crea i campi per i numeri.');
+        return;
+      }
+
+      const numbers = fields.map(input => Number(input.value));
+      const invalidIndex = numbers.findIndex(n => !Number.isInteger(n) || n < 1);
+      if (invalidIndex !== -1) {
+        showError(`Il numero ${invalidIndex + 1} deve essere un numero naturale maggiore o uguale a 1.`);
+        return;
+      }
+
+      const analyses = numbers.map(n => ({
+        number: n,
+        factorization: factorize(n)
+      }));
+
+      renderFactorizations(analyses);
+      renderCommonPart(analyses);
+
+      results.style.display = 'block';
+      commonSection.style.display = 'block';
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function factorize(n) {
+      const factors = {};
+      const steps = [];
+      let current = n;
+      let divisor = 2;
+
+      if (n === 1) {
+        return {
+          steps: [{ left: 1, right: '' }],
+          factors
+        };
+      }
+
+      while (current > 1) {
+        if (current % divisor === 0) {
+          steps.push({ left: current, right: divisor });
+          factors[divisor] = (factors[divisor] || 0) + 1;
+          current = current / divisor;
+        } else {
+          divisor = nextPossibleDivisor(divisor);
+        }
+      }
+
+      steps.push({ left: 1, right: '' });
+      return { steps, factors };
+    }
+
+    function nextPossibleDivisor(d) {
+      if (d === 2) return 3;
+      return d + 2;
+    }
+
+    function renderFactorizations(analyses) {
+      factorizations.innerHTML = '';
+
+      analyses.forEach(({ number, factorization }) => {
+        const card = document.createElement('article');
+        card.className = 'factor-card';
+
+        const title = document.createElement('h3');
+        title.textContent = `Numero ${number}`;
+
+        const divisionWrapper = document.createElement('div');
+        divisionWrapper.className = 'division-wrapper';
+        divisionWrapper.appendChild(createDivisionTable(factorization.steps));
+
+        const expression = document.createElement('div');
+        expression.className = 'factor-expression';
+        expression.innerHTML = `${number} = ${formatFactors(factorization.factors)}`;
+
+        card.appendChild(title);
+        card.appendChild(divisionWrapper);
+        card.appendChild(expression);
+        factorizations.appendChild(card);
+      });
+    }
+
+    function createDivisionTable(steps) {
+      const table = document.createElement('table');
+      table.className = 'division-table';
+      table.setAttribute('aria-label', 'Tabella delle divisioni successive');
+
+      steps.forEach(step => {
+        const row = document.createElement('tr');
+        const left = document.createElement('td');
+        const right = document.createElement('td');
+        left.textContent = step.left;
+        right.textContent = step.right;
+        row.appendChild(left);
+        row.appendChild(right);
+        table.appendChild(row);
+      });
+
+      return table;
+    }
+
+    function renderCommonPart(analyses) {
+      const common = getCommonPrimeFactors(analyses.map(a => a.factorization.factors));
+      const commonEntries = Object.entries(common).map(([prime, exp]) => [Number(prime), exp]);
+      const gcd = commonEntries.reduce((product, [prime, exp]) => product * Math.pow(prime, exp), 1);
+
+      commonFactors.innerHTML = '';
+
+      if (commonEntries.length === 0) {
+        commonExplanation.innerHTML = 'Non ci sono fattori primi comuni a tutti i numeri: quindi il MCD è 1.';
+        commonFactors.innerHTML = '<span class="empty-state">Nessun fattore primo comune.</span>';
+        calculationLine.textContent = 'Prodotto dei fattori comuni: 1';
+        finalLine.textContent = 'MCD = 1';
+        gcdValue.textContent = '1';
+        return;
+      }
+
+      commonExplanation.innerHTML = 'Si prendono solo i fattori primi presenti in tutti i numeri, ciascuno con il suo esponente minimo.';
+
+      commonEntries.forEach(([prime, exp]) => {
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        pill.innerHTML = `${prime}${exp > 1 ? `<sup>${exp}</sup>` : ''}`;
+        commonFactors.appendChild(pill);
+      });
+
+      const symbolicProduct = commonEntries
+        .map(([prime, exp]) => exp > 1 ? `${prime}<sup>${exp}</sup>` : `${prime}`)
+        .join(' · ');
+
+      const expandedProduct = commonEntries
+        .map(([prime, exp]) => String(Math.pow(prime, exp)))
+        .join(' · ');
+
+      calculationLine.innerHTML = `MCD = ${symbolicProduct}`;
+      finalLine.innerHTML = `MCD = ${expandedProduct} = <strong>${gcd}</strong>`;
+      gcdValue.textContent = gcd;
+    }
+
+    function getCommonPrimeFactors(factorMaps) {
+      const common = {};
+      const firstMap = factorMaps[0] || {};
+
+      Object.keys(firstMap).forEach(prime => {
+        const exponents = factorMaps.map(map => map[prime] || 0);
+        const minExponent = Math.min(...exponents);
+        if (minExponent > 0) {
+          common[prime] = minExponent;
+        }
+      });
+
+      return common;
+    }
+
+    function formatFactors(factors) {
+      const entries = Object.entries(factors).map(([prime, exp]) => [Number(prime), exp]);
+      if (entries.length === 0) return '1';
+
+      return entries
+        .map(([prime, exp]) => exp === 1 ? `${prime}` : `${prime}<sup>${exp}</sup>`)
+        .join(' · ');
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    }
+
+    function hideError() {
+      errorBox.textContent = '';
+      errorBox.style.display = 'none';
+    }
+
+    function hideResults() {
+      results.style.display = 'none';
+      commonSection.style.display = 'none';
+      factorizations.innerHTML = '';
+      commonFactors.innerHTML = '';
+      commonExplanation.textContent = '';
+      calculationLine.textContent = '';
+      finalLine.textContent = '';
+      gcdValue.textContent = '';
+    }
+  </script>
+</body>
+</html>
